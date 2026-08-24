@@ -11,6 +11,18 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "api.dicebear.com",
       },
+      {
+        protocol: "https",
+        hostname: "img.magnific.com",
+      },
+      {
+        protocol: "https",
+        hostname: "i.etsystatic.com",
+      },
+      {
+        protocol: "https",
+        hostname: "makerworld.bblmw.com",
+      },
     ],
   },
 };

@@ -1,6 +1,6 @@
 import { Locale } from '@/types';
 import Banner from '@/components/home/Banner';
-import CategoriesSection from '@/components/home/CategoriesSection';
+import ShopByCategory from '@/components/home/ShopByCategory';
 import FlashSaleSection from '@/components/home/FlashSaleSection';
 import BestSellerSection from '@/components/home/BestSellerSection';
 import NewArrivalsSection from '@/components/home/NewArrivalsSection';
@@ -16,7 +16,7 @@ export default async function HomePage({ params }: Props) {
   return (
     <>
       <Banner locale={locale} />
-      <CategoriesSection locale={locale} />
+      <ShopByCategory locale={locale} />
       <FlashSaleSection locale={locale} />
       <BestSellerSection locale={locale} />
       <NewArrivalsSection locale={locale} />
