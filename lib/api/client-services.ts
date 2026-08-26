@@ -1,88 +1,74 @@
 'use client';
 
 /**
- * Client-side services that use Next.js API routes (no CORS issues)
- * These are for use in client components
+ * ============================================================================
+ * Client Services — called from Client Components
+ * ============================================================================
+ * Each service method calls OUR Next.js route under `/api/**` (never the
+ * external backend directly), so there are no CORS/self-signed-cert issues
+ * in the browser. Every route replies with the same envelope:
+ *   { success, statusCode, data?, error?, message }
+ * so `request()` below can be shared by every service.
  */
 
-import { ApiResponse } from './client';
+import { ApiResponse, ApiCategory, ApiProduct, PagedResult, PaginationParams } from './types';
+import { toQueryString } from './query-string';
 
+/** GETs one of our own `/api/**` routes and normalizes the result to ApiResponse. */
+async function request<T = any>(path: string, notFoundMessage: string): Promise<ApiResponse<T>> {
+  try {
+    const response = await fetch(path, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      return {
+        success: false,
+        statusCode: response.status,
+        error: `HTTP Error: ${response.statusText}`,
+        message: notFoundMessage,
+      };
+    }
+
+    return await response.json();
+  } catch (error: any) {
+    console.error(notFoundMessage, error);
+    return {
+      success: false,
+      statusCode: 500,
+      error: error.message,
+      message: notFoundMessage,
+    };
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Categories
+// ----------------------------------------------------------------------------
 export const categoryClientService = {
-  /**
-   * Get all categories with pagination
-   * Uses Next.js API route proxy
-   */
-  getAll: async (params?: {
-    pageNumber?: number;
-    pageSize?: number;
-  }): Promise<ApiResponse> => {
-    try {
-      const queryParams = new URLSearchParams();
-      if (params?.pageNumber) queryParams.append('pageNumber', String(params.pageNumber));
-      if (params?.pageSize) queryParams.append('pageSize', String(params.pageSize));
+  /** Get all categories with pagination — GET /api/categories */
+  getAll: (params?: PaginationParams) =>
+    request<PagedResult<ApiCategory>>(
+      `/api/categories${toQueryString(params)}`,
+      'Failed to fetch categories'
+    ),
 
-      const response = await fetch(`/api/categories?${queryParams.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+  /** Get one category by id — GET /api/categories/:id */
+  getById: (id: string | number) =>
+    request<ApiCategory>(`/api/categories/${id}`, 'Failed to fetch category'),
+};
 
-      if (!response.ok) {
-        return {
-          success: false,
-          statusCode: response.status,
-          error: `HTTP Error: ${response.statusText}`,
-          message: 'Failed to fetch categories',
-        };
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error: any) {
-      console.error('Error fetching categories:', error);
-      return {
-        success: false,
-        statusCode: 500,
-        error: error.message,
-        message: 'Error fetching categories',
-      };
-    }
-  },
-
-  /**
-   * Get category by ID
-   */
-  getById: async (id: string): Promise<ApiResponse> => {
-    try {
-      const response = await fetch(`/api/categories/${id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        return {
-          success: false,
-          statusCode: response.status,
-          error: `HTTP Error: ${response.statusText}`,
-          message: 'Failed to fetch category',
-        };
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error: any) {
-      console.error('Error fetching category:', error);
-      return {
-        success: false,
-        statusCode: 500,
-        error: error.message,
-        message: 'Error fetching category',
-      };
-    }
-  },
+// ----------------------------------------------------------------------------
+// Products
+// ----------------------------------------------------------------------------
+export const productClientService = {
+  /** Get products in a category with pagination — GET /api/products/category/:id */
+  getByCategory: (categoryId: string | number, params?: PaginationParams) =>
+    request<PagedResult<ApiProduct>>(
+      `/api/products/category/${categoryId}${toQueryString(params)}`,
+      'Failed to fetch products'
+    ),
 };
 
 export default categoryClientService;

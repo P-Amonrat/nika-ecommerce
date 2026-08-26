@@ -4,26 +4,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { categoryClientService } from '@/lib/api/client-services';
+import { ApiCategory, PagedResult } from '@/lib/api/types';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { CategorySkeletonLoader, SkeletonHeader } from '@/components/common/SkeletonLoader';
 import { Locale } from '@/types';
-
-interface Category {
-  id: number;
-  name: string;
-  description: string;
-  parentCategoryId: number;
-  isActive: boolean;
-  createdAt: string;
-}
-
-interface CategoriesResponse {
-  items: Category[];
-  pageNumber: number;
-  pageSize: number;
-  totalCount: number;
-  totalPages: number;
-}
 
 interface ShopByCategoryProps {
   locale: Locale;
@@ -42,12 +26,12 @@ const MOCK_IMAGES = [
 ];
 
 export default function ShopByCategory({ locale }: ShopByCategoryProps) {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<ApiCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
-  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [allCategories, setAllCategories] = useState<ApiCategory[]>([]);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const ITEMS_PER_PAGE = 5;
@@ -63,7 +47,7 @@ export default function ShopByCategory({ locale }: ShopByCategoryProps) {
         });
 
         if (response.success && response.data) {
-          const data = response.data as CategoriesResponse;
+          const data = response.data as PagedResult<ApiCategory>;
           setAllCategories(data.items);
           setTotalCount(data.totalCount);
           setCategories(data.items.slice(0, ITEMS_PER_PAGE));

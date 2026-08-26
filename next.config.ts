@@ -23,6 +23,12 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "makerworld.bblmw.com",
       },
+      {
+        // Product images now come from the real /api/Products backend —
+        // this is the CDN host its seed data currently points at.
+        protocol: "https",
+        hostname: "media.printables.com",
+      },
     ],
   },
 };

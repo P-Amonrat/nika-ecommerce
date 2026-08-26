@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
-import { Locale, Product } from '@/types';
-import { products } from '@/data/products';
-import { reviews } from '@/data/reviews';
+import { Locale, Product, Review } from '@/types';
+import { fetchExternalApi, toQueryString } from '@/lib/api/external-api';
+import { ApiProduct, ApiProductDetail, PagedResult } from '@/lib/api/types';
+import { apiProductToDisplayProduct } from '@/lib/api/adapters';
 import ProductDetail from '@/components/product/ProductDetail';
 import ProductSpecifications from '@/components/product/ProductSpecifications';
 import ProductReviews from '@/components/product/ProductReviews';
@@ -14,16 +15,46 @@ interface Props {
 export default async function ProductDetailPage({ params }: Props) {
   const { locale, id } = await params;
 
-  const product = products.find((p) => p.id === id);
+  // Fetch the product — GET {EXTERNAL_API_BASE}/api/Products/{id}
+  // `notFound()` throws by design, so this call must stay OUTSIDE the
+  // try/catch below or the 404 UI would get swallowed as a generic error.
+  const productResponse = await fetchExternalApi(`/api/Products/${id}`);
 
-  if (!product) {
+  if (!productResponse.ok) {
     notFound();
   }
 
-  const productReviews = reviews.filter((r) => r.productId === id);
-  const relatedProducts = products
-    .filter((p) => p.categoryId === product.categoryId && p.id !== id)
-    .slice(0, 4);
+  const apiProduct: ApiProductDetail = await productResponse.json();
+  const categoryId = String(apiProduct.categoryId);
+  const product: Product = apiProductToDisplayProduct(
+    { ...apiProduct, categoryName: apiProduct.category?.name },
+    categoryId
+  );
+
+  // The backend doesn't serve reviews yet — empty list until it does
+  // (see lib/api/adapters.ts for the other fields mocked for the same reason).
+  const productReviews: Review[] = [];
+
+  // Related products — other items in the same category.
+  let relatedProducts: Product[] = [];
+  try {
+    const relatedQuery = toQueryString({ pageNumber: 1, pageSize: 5 });
+    const relatedResponse = await fetchExternalApi(
+      `/api/Products/category/${apiProduct.categoryId}${relatedQuery}`
+    );
+
+    if (relatedResponse.ok) {
+      const relatedData: PagedResult<ApiProduct> = await relatedResponse.json();
+      relatedProducts = relatedData.items
+        .filter((item) => item.id !== apiProduct.id)
+        .slice(0, 4)
+        .map((item) =>
+          apiProductToDisplayProduct({ ...item, categoryName: apiProduct.category?.name }, categoryId)
+        );
+    }
+  } catch (error) {
+    console.error('Failed to load related products:', error);
+  }
 
   return (
     <div className="py-8 bg-white">
