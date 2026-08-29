@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Locale } from '@/types';
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
+import ApiErrorDialog from '@/components/common/ApiErrorDialog';
 import '@/app/globals.css';
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         {children}
       </main>
       <Footer locale={validLocale} />
+      <ApiErrorDialog />
     </div>
   );
 }

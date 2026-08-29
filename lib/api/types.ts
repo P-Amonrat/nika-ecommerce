@@ -63,6 +63,41 @@ export interface ApiProduct {
   brand?: string;
 }
 
+// ----------------------------------------------------------------------------
+// Auth
+// ----------------------------------------------------------------------------
+/** Body for POST /api/Auth/register. */
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  username: string;
+  phoneNumber: string;
+}
+
+/** The shape returned by POST /api/Auth/register. Backend contract isn't
+ *  strictly documented beyond success/failure, so keep this loose. */
+export interface RegisterResult {
+  id?: number | string;
+  email?: string;
+  username?: string;
+  [key: string]: unknown;
+}
+
+/** Body for POST /api/Auth/login. `identifier` accepts email or username. */
+export interface LoginRequest {
+  identifier: string;
+  password: string;
+}
+
+/** The shape returned by POST /api/Auth/login. Backend contract isn't
+ *  strictly documented beyond success/failure, so keep this loose. */
+export interface LoginResult {
+  token?: string;
+  accessToken?: string;
+  user?: { id?: number | string; email?: string; username?: string; [key: string]: unknown };
+  [key: string]: unknown;
+}
+
 /** The richer shape returned by GET /api/Products/:id. */
 export interface ApiProductDetail {
   id: number;

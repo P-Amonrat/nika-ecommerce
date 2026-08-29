@@ -93,10 +93,17 @@ export const useWishlistStore = create<WishlistStore>((set, get) => ({
   },
 }));
 
+interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export const useAuthStore = create<{
-  user: { id: string; name: string; email: string } | null;
+  user: AuthUser | null;
   isLoggedIn: boolean;
-  login: (email: string, password: string) => void;
+  /** Called after a successful POST /api/auth/login with the resolved user + token. */
+  login: (user: AuthUser, token?: string) => void;
   logout: () => void;
 }>((set) => ({
   user: typeof window !== 'undefined' && localStorage.getItem('user')
@@ -104,18 +111,39 @@ export const useAuthStore = create<{
     : null,
   isLoggedIn: typeof window !== 'undefined' ? !!localStorage.getItem('user') : false,
 
-  login: (email: string, password: string) => {
-    const mockUser = {
-      id: '1',
-      name: 'NIKA User',
-      email: email,
-    };
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    set({ user: mockUser, isLoggedIn: true });
+  login: (user: AuthUser, token?: string) => {
+    localStorage.setItem('user', JSON.stringify(user));
+    if (token) localStorage.setItem('authToken', token);
+    set({ user, isLoggedIn: true });
   },
 
   logout: () => {
     localStorage.removeItem('user');
+    localStorage.removeItem('authToken');
     set({ user: null, isLoggedIn: false });
   },
+}));
+
+/**
+ * ============================================================================
+ * Global API error dialog
+ * ============================================================================
+ * One dialog, mounted once in the locale layout, shared by every `/api/**`
+ * call. `lib/api/client-services.ts` calls `show()` whenever a request comes
+ * back with a 5xx status or throws (network/timeout) — genuine backend/
+ * infra failures — so any endpoint reports the same popup instead of each
+ * form growing its own "something broke" UI. Expected, per-field failures
+ * (400/401 validation, wrong credentials, etc.) are still handled locally by
+ * the form that made the call, since those are user-actionable, not outages.
+ */
+export const useApiErrorStore = create<{
+  isOpen: boolean;
+  detail?: string;
+  show: (detail?: string) => void;
+  hide: () => void;
+}>((set) => ({
+  isOpen: false,
+  detail: undefined,
+  show: (detail) => set({ isOpen: true, detail }),
+  hide: () => set({ isOpen: false, detail: undefined }),
 }));

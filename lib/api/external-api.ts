@@ -23,18 +23,36 @@ const REQUEST_TIMEOUT_MS = 10_000;
  * this only centralizes the transport concerns (timeout, headers, dev certs).
  */
 export async function fetchExternalApi(path: string): Promise<Response> {
+  return requestExternalApi(path, 'GET');
+}
+
+/**
+ * POST a JSON body to the external API, e.g.
+ * postExternalApi('/api/Auth/register', { email, password }).
+ * Same contract as `fetchExternalApi` — callers check `response.ok` themselves.
+ */
+export async function postExternalApi(path: string, body: unknown): Promise<Response> {
+  return requestExternalApi(path, 'POST', body);
+}
+
+async function requestExternalApi(
+  path: string,
+  method: 'GET' | 'POST',
+  body?: unknown
+): Promise<Response> {
   const url = `${EXTERNAL_API_BASE}${path}`;
-  console.log('[external-api] GET', url);
+  console.log(`[external-api] ${method}`, url);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
     return await fetch(url, {
-      method: 'GET',
+      method,
       headers: {
         'Content-Type': 'application/json',
       },
+      ...(body !== undefined && { body: JSON.stringify(body) }),
       signal: controller.signal,
       // Dev-only: allow the backend's self-signed HTTPS certificate.
       ...(process.env.NODE_ENV === 'development' && {
